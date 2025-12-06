@@ -1,0 +1,120 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1rem;
+  background-color: var(--color-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stringContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  min-height: 3rem;
+  align-items: center;
+}
+
+.character {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.unprocessed {
+  background-color: var(--color-muted);
+  color: var(--color-muted-foreground);
+}
+
+.comparing {
+  background-color: var(--color-comparing);
+  color: white;
+  border-color: var(--color-comparing);
+  transform: scale(1.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.matching {
+  background-color: var(--color-matching);
+  color: white;
+  border-color: var(--color-matching);
+}
+
+.mismatched {
+  background-color: var(--color-mismatched);
+  color: white;
+  border-color: var(--color-mismatched);
+  animation: shake 0.3s;
+}
+
+.found {
+  background-color: var(--color-found);
+  color: var(--color-foreground);
+  border-color: var(--color-found);
+  font-weight: 700;
+}
+
+.patternPosition {
+  background-color: var(--color-pattern-position);
+  color: white;
+  border-color: var(--color-pattern-position);
+  opacity: 0.6;
+}
+
+.index {
+  font-size: 0.625rem;
+  color: var(--color-muted-foreground);
+  text-align: center;
+  margin-top: 0.25rem;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--color-muted);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legendColor {
+  width: 1rem;
+  height: 1rem;
+  border-radius: var(--radius-sm);
+}

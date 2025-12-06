@@ -1,0 +1,91 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.statsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.statCard {
+  padding: 1rem;
+  background-color: var(--color-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--color-primary);
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: var(--color-muted-foreground);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-foreground);
+  margin-top: 0.25rem;
+  font-family: var(--font-mono);
+}
+
+.logContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: var(--color-card);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.logHeader {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logList {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+}
+
+.logItem {
+  padding: 0.5rem;
+  background-color: var(--color-muted);
+  border-radius: var(--radius-sm);
+  color: var(--color-foreground);
+  border-left: 3px solid transparent;
+}
+
+.logItemCurrent {
+  background-color: var(--color-accent);
+  border-left-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.logEmpty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-muted-foreground);
+  font-style: italic;
+}
+
+.currentStepLabel {
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}

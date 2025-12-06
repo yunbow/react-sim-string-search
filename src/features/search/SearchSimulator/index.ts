@@ -1,0 +1,1 @@
+export { SearchSimulator } from './SearchSimulator';

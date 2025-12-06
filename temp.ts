@@ -1,0 +1,261 @@
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { AlgorithmType, DataPattern, ExecutionState, StepInfo, Statistics, CharacterState } from '../../../types';
+import { algorithms } from '../algorithms';
+import { generateData } from '../utils/dataGenerator';
+
+export interface UseSearchSimulatorResult {
+  // State
+  algorithm: AlgorithmType;
+  text: string;
+  pattern: string;
+  dataPattern: DataPattern;
+  textLength: number;
+  patternLength: number;
+  executionState: ExecutionState;
+  currentStep: StepInfo | null;
+  statistics: Statistics;
+  logs: StepInfo[];
+  textStates: CharacterState[];
+  patternStates: CharacterState[];
+  speed: number;
+  error: string;
+
+  // Actions
+  setAlgorithm: (algorithm: AlgorithmType) => void;
+  setText: (text: string) => void;
+  setPattern: (pattern: string) => void;
+  setDataPattern: (pattern: DataPattern) => void;
+  setTextLength: (length: number) => void;
+  setPatternLength: (length: number) => void;
+  setSpeed: (speed: number) => void;
+  start: () => void;
+  pause: () => void;
+  resume: () => void;
+  reset: () => void;
+  generateNewData: () => void;
+}
+
+const DEFAULT_TEXT_LENGTH = 20;
+const DEFAULT_PATTERN_LENGTH = 3;
+const DEFAULT_SPEED = 1.0;
+
+const DEFAULT_TEXT_LENGTH = 20;
+const DEFAULT_PATTERN_LENGTH = 3;
+const DEFAULT_SPEED = 1.0;
+
+export function useSearchSimulator(): UseSearchSimulatorResult {
+  const [algorithm, setAlgorithm] = useState<AlgorithmType>('brute-force');
+  const [text, setText] = useState('');
+  const [pattern, setPattern] = useState('');
+  const [dataPattern, setDataPattern] = useState<DataPattern>('random');
+  const [textLength, setTextLength] = useState(DEFAULT_TEXT_LENGTH);
+  const [patternLength, setPatternLength] = useState(DEFAULT_PATTERN_LENGTH);
+  const [executionState, setExecutionState] = useState<ExecutionState>('idle');
+  const [currentStep, setCurrentStep] = useState<StepInfo | null>(null);
+  const [statistics, setStatistics] = useState<Statistics>({
+    comparisons: 0,
+    shifts: 0,
+    totalSteps: 0,
+    executionTime: 0,
+    matchPositions: [],
+  });
+  const [logs, setLogs] = useState<StepInfo[]>([]);
+  const [textStates, setTextStates] = useState<CharacterState[]>([]);
+  const [patternStates, setPatternStates] = useState<CharacterState[]>([]);
+  const [speed, setSpeed] = useState(DEFAULT_SPEED);
+  const [error, setError] = useState('');
+
+  const generatorRef = useRef<Generator<StepInfo> | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+
+  // データ生成
+  const generateNewData = useCallback((options?: {
+    pattern?: DataPattern;
+    textLen?: number;
+    patternLen?: number;
+  }) => {
+    const data = generateData({
+      pattern: options?.pattern ?? dataPattern,
+      textLength: options?.textLen ?? textLength,
+      patternLength: options?.patternLen ?? patternLength,
+    });
+    setText(data.text);
+    setPattern(data.pattern);
+    setError('');
+  }, [dataPattern, textLength, patternLength]);
+
+  // 初期データ生成
+  useEffect(() => {
+    if (!text && !pattern) {
+      generateNewData();
+    }
+  }, []);
+
+  // バリデーション
+  useEffect(() => {
+    if (!pattern) {
+      setError('パターンを入力してください');
+    } else if (pattern.length > text.length) {
+      setError('パターンがテキストより長すぎます');
+    } else {
+      setError('');
+    }
+  }, [text, pattern]);
+
+  // アニメーションステップを実行
+  const executeStep = useCallback(() => {
+    if (!generatorRef.current) return;
+
+    const result = generatorRef.current.next();
+
+    if (!result.done) {
+      const step = result.value;
+      setCurrentStep(step);
+      setTextStates(step.textStates);
+      setPatternStates(step.patternStates);
+      setLogs((prev) => [...prev, step]);
+
+      // 統計を更新
+      setStatistics((prev) => {
+        const newStats = { ...prev };
+        newStats.totalSteps = step.stepNumber;
+
+        // 比較回数をカウント
+        if (step.textIndex >= 0 && step.patternIndex >= 0) {
+          newStats.comparisons += 1;
+        }
+
+        // シフト回数をカウント
+        if (step.shiftAmount) {
+          newStats.shifts += 1;
+        }
+
+        // 一致位置を記録
+        if (step.isMatch && step.description.includes('一致しました')) {
+          if (!newStats.matchPositions.includes(step.textIndex)) {
+            newStats.matchPositions.push(step.textIndex);
+          }
+        }
+
+        // 実行時間を更新
+        newStats.executionTime = Date.now() - startTimeRef.current;
+
+        return newStats;
+      });
+
+      // 次のステップをスケジュール
+      const delay = 1000 / speed;
+      animationRef.current = window.setTimeout(executeStep, delay);
+    } else {
+      // 完了
+      setExecutionState('completed');
+      setStatistics((prev) => ({
+        ...prev,
+        executionTime: Date.now() - startTimeRef.current,
+      }));
+    }
+  }, [speed]);
+
+  // 実行開始
+  const start = useCallback((overrideAlgorithm?: AlgorithmType) => {
+    if (error || !text || !pattern) return;
+
+    // ジェネレータを初期化
+    const algorithmToUse = overrideAlgorithm ?? algorithm;
+    const searchAlgorithm = algorithms[algorithmToUse];
+    generatorRef.current = searchAlgorithm(text, pattern);
+
+    // 状態をリセット
+    setExecutionState('running');
+    setCurrentStep(null);
+    setLogs([]);
+    setStatistics({
+      comparisons: 0,
+      shifts: 0,
+      totalSteps: 0,
+      executionTime: 0,
+      matchPositions: [],
+    });
+    setTextStates(new Array(text.length).fill('unprocessed'));
+    setPatternStates(new Array(pattern.length).fill('unprocessed'));
+    startTimeRef.current = Date.now();
+
+    // 実行開始
+    executeStep();
+  }, [algorithm, text, pattern, error, executeStep]);
+
+  // 一時停止
+  const pause = useCallback(() => {
+    if (animationRef.current !== null) {
+      clearTimeout(animationRef.current);
+      animationRef.current = null;
+    }
+    setExecutionState('paused');
+  }, []);
+
+  // 再開
+  const resume = useCallback(() => {
+    setExecutionState('running');
+    executeStep();
+  }, [executeStep]);
+
+  // リセット
+  const reset = useCallback(() => {
+    if (animationRef.current !== null) {
+      clearTimeout(animationRef.current);
+      animationRef.current = null;
+    }
+    generatorRef.current = null;
+    setExecutionState('idle');
+    setCurrentStep(null);
+    setLogs([]);
+    setStatistics({
+      comparisons: 0,
+      shifts: 0,
+      totalSteps: 0,
+      executionTime: 0,
+      matchPositions: [],
+    });
+    setTextStates(new Array(text.length).fill('unprocessed'));
+    setPatternStates(new Array(pattern.length).fill('unprocessed'));
+  }, [text.length, pattern.length]);
+
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (animationRef.current !== null) {
+        clearTimeout(animationRef.current);
+      }
+    };
+  }, []);
+
+  return {
+    algorithm,
+    text,
+    pattern,
+    dataPattern,
+    textLength,
+    patternLength,
+    executionState,
+    currentStep,
+    statistics,
+    logs,
+    textStates,
+    patternStates,
+    speed,
+    error,
+    setAlgorithm,
+    setText,
+    setPattern,
+    setDataPattern,
+    setTextLength,
+    setPatternLength,
+    setSpeed,
+    start,
+    pause,
+    resume,
+    reset,
+    generateNewData,
+  };
+}
